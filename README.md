@@ -5,7 +5,7 @@ https://www.udemy.com/course/redis-the-complete-developers-guide-p<br>
 https://www.drawio.com/<br>
 
 https://rbook.cloud/<br>
-
+https://www.udemy.com/course/redis-the-complete-developers-guide-p/learn/lecture/32883916#overview
 # 0. Tips
 1. bypass udemy black screen
 ```bash
@@ -42,10 +42,22 @@ $ docker exec -it redis_container redis-cli
 
 # authentication vis redis-cli
 >>AUTH "redis"
+
+# checking local port
+$ lsof -i -P -n | grep LISTEN
+
+# run redis stack
+# https://redis.io/docs/getting-started/install-stack/docker/
+$ docker run -d -v /Users/runzhou/git/redis/data/:/data --name redis_stack_container -p 6380:6379 -p 8001:8001 redis/redis-stack:latest
+
+
+$ docker exec -it redis_stack_container redis-cli
 ```
 
 - setup in macos
     - https://redis.io/docs/getting-started/installation/install-redis-on-mac-os/
+    - https://www.udemy.com/course/redis-the-complete-developers-guide-p/learn/lecture/32883916#overview
+
 
 <br><br><br><br><br><br>
 
@@ -225,6 +237,7 @@ OK
         - first one 21
         - second one 22
         - ![imgs](./imgs/Xnip2023-08-28_11-04-03.jpg)
+        
 
 
 ## 2.5 Exercise
@@ -240,5 +253,119 @@ $ SET news "Today's Headlines" EX 5
 $ SET news "Today's Headlines" PX 5000
 $ GET news
 ```
+
+<br><br><br><br><br><br>
+
+# 3. E-Commerce App Setup
+
+<br><br><br>
+
+## 3.1 Setup
+1. Node JS setup
+2. extract rbay.zip
+3. npm install
+4. add connection info to the .env file
+5. start the project by running `npm run dev`
+
+<br><br><br>
+
+## 3.2 Redis Client Lib
+- redis js command, https://redis.js.org/#node-redis-usage-redis-commands
+- jedis, java version of redis lib, https://www.javadoc.io/doc/redis.clients/jedis/latest/index.html
+```ts
+// GET color
+client.get('color')
+
+// SET color red
+client.get('color', 'red')
+
+// GET color red EX 2 GET
+client.set('color', 'red', {
+    EX: 2,
+    GET: true
+})
+
+
+```
+
+<br><br><br>
+
+## 3.3 First Implementation task
+- ![imgs](./imgs/Xnip2023-08-31_16-09-45.jpg)
+
+<br><br><br>
+
+## 3.4 Redis Design methodology
+1. SQL 
+    - put the data in tables
+    - figure out how we will query it
+
+2. Redis
+    - figure out what queries we need to answer
+    - structure data to best answer those queries
+
+3. Design considerations
+    - what type of data are we storing?
+        - Strings
+    - should we be concered about the size of data?
+        - `YES! Only cache certain pages`
+    - do we need to expire this data?
+        - Yes, expire after some number of minutes/hours/days
+    - what will the key naming policy be for this data?
+    - any business-logic concerns?
+        - NO
+
+4. Pages
+    - Custom Pages, .334MB for each user
+        - will change often
+    - Static page, .22MB for all users
+        - will not ofen change
+    - one page normally 57.1kb
+    - ![imgs](./imgs/Xnip2023-08-31_16-23-04.jpg)
+
+5. Key Naming methodology
+    - key should be unique
+    - other engineers should understand what a key is for
+    - tip - use functions to generate your key names so you never make a typo
+    - extremely common practice is to use a `:` to separate differnt parts of the key
+        - users:45
+        - items:19
+        - users:posts:901
+        - posts:jqip25jnm
+    - `small twist on common practice` we're going to use a # before unique ID's to make implementing search easier
+        - users#45
+        - items#19
+        - users#posts#901
+        - posts#jqip25jnm
+    - ![imgs](./imgs/Xnip2023-08-31_16-30-47.jpg)
+    
+```bash
+# Page Name             Address                                 Unique Route
+Privacy Page            localhost:3000/privacy                  /privacy
+About Us Page           localhost:3000/about                    /about
+Sign In Page            localhost:3000/auth/signin              /auth/signin
+Sign Up Page            localhost:3000/auth/signup              /auth/signup
+
+# Redis
+# basekey page -> pagecache
+pagecache#/about                    <html></html>
+pagecache#/privacy                  <html></html>
+pagecache#/auth/signin              <html></html>
+pagecache#/auth/signup              <html></html>
+```
+
+<br><br><br>
+
+## 3.5 Adding Page Caching
+- after this the page access will be much faster
+    - ![imgs](./imgs/Xnip2023-08-31_16-53-58.jpg)
+
+
+## 3.6 Better Key Generation
+- to avoid below typo
+```ts
+client.get('pagecach#' + someValue);
+```
+
 
 
