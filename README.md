@@ -359,6 +359,7 @@ pagecache#/auth/signup              <html></html>
 ## 3.5 Adding Page Caching
 - after this the page access will be much faster
     - ![imgs](./imgs/Xnip2023-08-31_16-53-58.jpg)
+    
 
 
 ## 3.6 Better Key Generation
@@ -367,5 +368,115 @@ pagecache#/auth/signup              <html></html>
 client.get('pagecach#' + someValue);
 ```
 
+<br><br><br><br><br><br>
+
+# 4. Hash Data Structure
+
+<br><br><br>
+
+## 4.1 Hashes in redis
+1. not allowed deeply nested data structure
+    - ![imgs](./imgs/Xnip2023-08-31_17-58-28.jpg)
+
+2. storing and retrieving hashes
+    - Hash cmds
+    - ![imgs](./imgs/Xnip2023-08-31_17-58-57.jpg)
+    
+```bash
+# HSET  
+127.0.0.1:6379> HSET company name 'Concrete Co' age 1915 industry materials revenue 5.3
+(integer) 4
+
+# HGET
+127.0.0.1:6379> HGET company name
+"Concrete Co"
+
+# HGETALL
+127.0.0.1:6379> HGETALL company
+1) "name"
+2) "Concrete Co"
+3) "age"
+4) "1915"
+5) "industry"
+6) "materials"
+7) "revenue"
+8) "5.3"
+
+```
+
+3. Deleting Hash Data
+```bash
+# HEXISTS
+127.0.0.1:6379> HEXISTS company age
+(integer) 1
+
+# DEL, delete entire key
+127.0.0.1:6379> DEL company
+(integer) 1
+127.0.0.1:6379> HGETALL company
+(empty array)
+
+# HDEL, delete a single key-value
+127.0.0.1:6379> HSET company name 'Concrete Co' age 1915 industry materials revenue 5.3
+(integer) 4
+127.0.0.1:6379> HDEL company age
+(integer) 1
+127.0.0.1:6379> HGETALL company
+1) "name"
+2) "Concrete Co"
+3) "industry"
+4) "materials"
+5) "revenue"
+6) "5.3"
+```
+
+4. Numbers in Hashes
+```bash
+# HINCRBY
+127.0.0.1:6379> HINCRBY company age 10
+(integer) 1925
+127.0.0.1:6379> HGETALL company
+1) "name"
+2) "Concrete Co"
+3) "industry"
+4) "materials"
+5) "revenue"
+6) "5.3"
+7) "age"
+8) "1925"
+127.0.0.1:6379> 
 
 
+# HINCRBYFLOAT
+127.0.0.1:6379> HINCRBYFLOAT company revenue 1.025
+"6.325"
+127.0.0.1:6379> HGETALL company
+1) "name"
+2) "Concrete Co"
+3) "industry"
+4) "materials"
+5) "revenue"
+6) "6.325"
+7) "age"
+8) "1925"
+
+# HSTRLEN
+127.0.0.1:6379> HSTRLEN company name
+(integer) 11
+
+
+# HKEYS
+127.0.0.1:6379> HKEYS company
+1) "name"
+2) "industry"
+3) "revenue"
+4) "age"
+
+# HVALS
+127.0.0.1:6379> HVALS company
+1) "Concrete Co"
+2) "materials"
+3) "6.325"
+4) "1925"
+```
+    - ![imgs](./imgs/Xnip2023-08-31_18-14-54.jpg)
