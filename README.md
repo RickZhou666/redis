@@ -783,3 +783,155 @@ $ npm run sandbox
 
 ```
 - ![imgs](./imgs/Xnip2023-09-26_14-59-04.jpg)
+
+<br><br><br><br><br><br>
+
+# 8. Enforcing uniqueness with sets
+- ![imgs](./imgs/Xnip2023-09-26_15-15-26.jpg)
+
+
+
+<br><br><br>
+
+## 8.1 basic of sets
+
+```bash
+SADD colors green
+(integer) 1
+
+SADD colors read
+(integer) 1
+
+SMEMBER colors
+127.0.0.1:6379> SMEMBERS colors
+1) "red"
+2) "green"
+
+```
+
+<br><br><br>
+
+## 8.2 set union
+
+```bash
+SADD colors:1 red blue orange
+SADD colors:2 blue green purple
+SADD colors:3 blue red purple
+>>(integer) 3
+
+SUNION colors:1 colors:2 colors:3
+1) "red"
+2) "blue"
+3) "orange"
+4) "green"
+5) "purple"
+
+
+# delete a set
+DEL colors:1
+DEL colors:2
+DEL colors:3
+
+```
+
+<br><br><br>
+
+## 8.3 intersection
+
+```bash
+SINTER colors:1 colors:2 colors:3
+
+```
+- ![imgs](./imgs/Xnip2023-09-26_15-37-42.jpg)
+
+
+
+
+<br><br><br>
+
+## 8.4 difference of sets
+- return elements that exist in the first set, but not any others
+```bash
+SDIFF colors:1 colors:2 colors:3
+
+```
+
+<br><br><br>
+
+## 8.5 store variations
+1. find interseciton
+2. store in the new key
+
+
+```bash
+SINTERSTORE colors:results colors:1 colors:1 colors:2
+SMEMBERS colors:results
+```
+
+<br><br><br>
+
+## 8.6 checking for an element in a set
+- 1 is member
+- 0 is not member
+
+
+```bash
+127.0.0.1:6379> SMISMEMBER colors:1 red green blue
+1) (integer) 1
+2) (integer) 0
+3) (integer) 1
+
+127.0.0.1:6379> SMEMBERS colors:1
+1) "red"
+2) "blue"
+3) "orange"
+127.0.0.1:6379> 
+```
+
+<br><br><br>
+
+## 8.7 scanning a set
+```bash
+127.0.0.1:6379> SCARD colors:1
+(integer) 3
+
+
+
+```
+- ![imgs](./imgs/Xnip2023-09-26_15-48-45.jpg)
+
+```bash
+127.0.0.1:6379> SREM colors:2 blue
+(integer) 1
+127.0.0.1:6379> SISMEMBER colors:2 blue
+(integer) 0
+127.0.0.1:6379> SMEMBERS colors:2
+1) "green"
+2) "purple"
+```
+
+
+- ![imgs](./imgs/Xnip2023-09-26_15-51-00.jpg)
+
+```bash
+SSCAN colors:1 0 COUNT 2
+
+```
+
+- ![imgs](./imgs/Xnip2023-09-26_15-50-26.jpg)
+
+<br><br><br>
+
+## 8.8 most common use cases of Sets
+
+1. enforcing uniqueness of any value
+    - ![imgs](./imgs/Xnip2023-09-26_16-09-12.jpg)
+
+2. Creating a relationship between different records
+    - ![imgs](./imgs/Xnip2023-09-26_16-06-19.jpg)
+
+3. finding common attributes between different things
+    - ![imgs](./imgs/Xnip2023-09-26_16-07-39.jpg)
+
+4. general list of elements where order doesn't matter
+    - ![imgs](./imgs/Xnip2023-09-26_16-08-43.jpg)
