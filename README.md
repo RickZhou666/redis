@@ -760,8 +760,26 @@ const serialize = (session: Session) => {
 
 - ![imgs](./imgs/Xnip2023-09-26_14-15-56.jpg)
 
+<br><br><br>
 
 ## 6.8 store and fetch items
 
 1. item created and able to retrieve from redis
 - ![imgs](./imgs/Xnip2023-09-26_14-33-56.jpg)
+
+<br><br><br><br><br><br>
+
+# 7. pipeling commands
+
+1. option #1 - loop over id's fetch one at a time (you probably dont want this)
+    - ![imgs](./imgs/Xnip2023-09-26_14-53-49.jpg)
+
+2. option #2 - Pipelining 
+    - ![imgs](./imgs/Xnip2023-09-26_14-53-32.jpg)
+
+
+```bash
+$ npm run sandbox
+
+```
+- ![imgs](./imgs/Xnip2023-09-26_14-59-04.jpg)
