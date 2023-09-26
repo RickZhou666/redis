@@ -480,3 +480,66 @@ client.get('pagecach#' + someValue);
 4) "1925"
 ```
     - ![imgs](./imgs/Xnip2023-08-31_18-14-54.jpg)
+
+
+<br><br><br><br><br><br>
+
+# 5. Redis has gotcha's
+
+## 5.1 Issues with HSET
+
+1. prepare the HGETALL command
+2. put in the value for each key, calling the 'toString()' method on each value
+3. `TypeError: Cannot read properties of null (reading 'toString')`
+    - ![imgs](./imgs/Xnip2023-09-25_21-29-50.jpg)
+    - ![imgs](./imgs/Xnip2023-09-25_21-30-27.jpg)
+    
+
+```js
+import 'dotenv/config';
+import { client } from '../src/services/redis';
+
+const run = async () => {
+	await client.hSet('car', {
+		color: 'red',
+		year: 1950,
+		engine: { cylinders: 8 },
+		owner: null || '', // put a empty string
+		service: undefined || ''
+	});
+	// HSET car color read year 1950
+
+	const car = await client.hGetAll('car');
+
+	console.log(car);
+};
+run();
+```
+- ![imgs](./imgs/Xnip2023-09-25_21-33-16.jpg)
+
+
+## 5.2 Issues with HGETALL
+1. when you get a null key, it return an object, you need check the length instead of checking it's null
+
+```js 
+// (1) not enter the condition block
+const car = await client.hGetAll('car#1993');
+if (!car) {
+    console.log('Car not found, respond with 404');
+    return;
+}
+[INFO] 21:40:59 Restarting: /Users/runzhou/git/redis/sec3-ecommerce_app/rbay/sandbox/index.ts has been modified
+[Object: null prototype] {}
+
+
+
+// (2) able to check its null
+const car = await client.hGetAll('car#1993');
+if (Object.keys(car).length === 0) {
+    console.log('Car not found, respond with 404');
+    return;
+}
+[INFO] 21:41:38 Restarting: /Users/runzhou/git/redis/sec3-ecommerce_app/rbay/sandbox/index.ts has been modified
+Car not found, respond with 404
+
+```
