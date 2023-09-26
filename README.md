@@ -518,6 +518,7 @@ run();
 - ![imgs](./imgs/Xnip2023-09-25_21-33-16.jpg)
 
 
+
 ## 5.2 Issues with HGETALL
 1. when you get a null key, it return an object, you need check the length instead of checking it's null
 
@@ -541,5 +542,226 @@ if (Object.keys(car).length === 0) {
 }
 [INFO] 21:41:38 Restarting: /Users/runzhou/git/redis/sec3-ecommerce_app/rbay/sandbox/index.ts has been modified
 Car not found, respond with 404
+```
+
+<br><br><br><br><br><br>
+
+# 6. powerful design patterns
+
+## 6.1 App overview
+
+1. walkthrough
+    - walkthrough of the app
+    - how to store data in Redis
+    - what data should be stored as hashes
+
+2. basic auction rules
+    - users create 'items' to sell
+    - items have a starting price and an ending time
+    - other users can 'bid' on an item, a bit must be higher than all previous bids
+    - at the ending time, the user with higher bid wins the item    
+
+<br><br><br>
+
+## 6.2 reducing design to queries
+1. figure out what queries we need to answer
+2. structure data to best answer those queries
+
+
+Landing Page
+- items sorted by price
+- items sorted by ending time
+- items sorted by views
+- search for items by name
+- ![imgs](./imgs/Xnip2023-09-26_11-51-00.jpg)
+
+Sign in
+- find a user with given user name
+- create a session (auth)
+- find a session (auth)
+- get a user with a given ID (auth)
+- ![imgs](./imgs/Xnip2023-09-26_11-51-22.jpg)
+
+Sign up
+- create a user
+- ![imgs](./imgs/Xnip2023-09-26_11-51-37.jpg)
+
+Item Create
+- Create an item
+- ![imgs](./imgs/Xnip2023-09-26_11-51-51.jpg)
+
+Item Show
+- fetch an item with a given ID
+- find the # of likes tied to an item
+- like an item
+- unlike an item
+- see if current user lieks an item
+- create a bid tied to an item
+- find the bid history of an item
+- find items similar to an existing item
+- increment the number of views for an item
+- ![imgs](./imgs/Xnip2023-09-26_11-52-06.jpg)
+
+Seller profile
+- find items a user likes
+- find items two different users both like
+- ![imgs](./imgs/Xnip2023-09-26_11-52-18.jpg)
+
+dashboard
+- find items created by a user, sorted by various criteria
+- ![imgs](./imgs/Xnip2023-09-26_11-52-32.jpg)
+
+
+
+
+'things' in our app
+- users
+- sessions
+- items
+- bids
+- views
+- likes
+
+
+<br><br><br>
+
+## 6.3 date type for each resources
+
+1. Store as hash
+    - the record has many attributes
+    - a collection of these records have to be sorted many different ways
+    - often need to access a single record at a time
+    - `users, sessions, items`
+
+
+2. Not store as hash
+    - the record is only for counting or enforcing uniqueness
+    - record stores only one or two attributes
+    - used only for creating relations between different records
+    - the record is only used for time series data
+    - `likes, views, bids`
+
+
+<br><br><br>
+
+## 6.4 create user implementation
+
+
+1. why create separate object instead of passing attrs directly?
+```ts
+export const createUser = async (attrs: CreateUserAttrs) => {
+	const id = genId();
+	await client.hSet(usersKey(id), {
+		username: attrs.username,
+		password: attrs.password
+	});
+
+	return id;
+};
+
+// ===to===> 
+
+export const createUser = async (attrs: CreateUserAttrs) => {
+	const id = genId();
+	await client.hSet(usersKey(id), serialize(attrs));
+
+	return id;
+};
+
+const serialize = (user: CreateUserAttrs) => {
+	return {
+		username: user.username,
+		passowrd: user.password
+	};
+};
 
 ```
+
+
+2. Save data
+    - dont need to store the ID
+    - date might be in a format that we don't want 
+
+
+3. retrieve data
+    - we probably want the ID included in this objec
+    - we probably want 'revenue' as a number, not a string
+    - we probably want 'createdAt' as a Date object, not a string
+
+4. serialize
+    - take some information and encode it to be sent off and stored or used by some other kind of system
+    1.  gets an object ready to go INTO Redis as a hash
+    2. removed id
+    3. turns dates into a querable format
+
+
+5. deserialize
+    -  receive some information that might be encoded in a strange way and prepare this information to be used in a format that is readily consumed by our application
+    1. turns strings into numbers
+    2. adds the ID
+    3. turns createdAt into a Date object
+
+
+<br><br><br>
+
+## 6.5 implmenting sessions
+
+Sign up
+1. create a new hash with the provided username + password
+2. we need to consider this person to be signed in to our app
+3. generate a 'session token', and create a new hash with details about this person in redis
+4. randomly generated session token is '551'
+5. send session token back to browser
+- ![imgs](./imgs/Xnip2023-09-26_13-40-42.jpg)
+
+
+Create n new item
+1. someone is trying to create an item, let's make sure they are logged in
+2. get the session token from the incoming request 551
+3. see if there's a stored session with that ID
+4. there is! the person making the request must be 'user7'
+- ![imgs](./imgs/Xnip2023-09-26_13-46-07.jpg)
+
+
+<br><br><br>
+
+## 6.6 fetching a saved session
+
+1. redis find nothing and return u an empty object
+
+- ![imgs](./imgs/Xnip2023-09-26_13-51-01.jpg)
+
+
+
+
+<br><br><br>
+
+## 6.6 creating sessions
+```ts
+
+export const saveSession = async (session: Session) => {
+	return client.hSet(
+		sessionKey(session.id), 
+		serialize(session)
+	);
+};
+const serialize = (session: Session) => {
+	return {
+		userId: session.userId,
+		username: session.username
+	};
+};
+
+```
+
+<br><br><br>
+
+## 6.7 serializing date times
+
+- ![imgs](./imgs/Xnip2023-09-26_14-15-56.jpg)
+
+
+## 6.8 store and fetch items
+
+1. item created and able to retrieve from redis
+- ![imgs](./imgs/Xnip2023-09-26_14-33-56.jpg)
